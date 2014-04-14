@@ -3,6 +3,11 @@ include '../vendor/autoload.php';
 function loader($className)
 {
     $filename = __DIR__ . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
+    $filename = explode(DIRECTORY_SEPARATOR, $filename);
+
+    unset($filename[array_search('GuzzleHttp', $filename)]);
+
+    $filename = join(DIRECTORY_SEPARATOR, $filename);
     if (file_exists($filename)) {
         include_once($filename);
     }
@@ -51,7 +56,7 @@ $client->sendAll($requests, [
                 ob_flush();
             },
         'enqueue'  => function (\GuzzleHttp\Queue\Event\EnqueueEvent $enqueueEvent, $eventName) {
-//                echo 'Thrown into queue event<br/>';
+                //                echo 'Thrown into queue event<br/>';
                 ob_flush();
             },
         'error'    => function (\GuzzleHttp\Event\ErrorEvent $event) {

@@ -12,6 +12,11 @@
             "url": "https://github.com/ivanbatic/guzzle.git"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "GuzzleHttp\\": "src/"
+        }
+    },
     "require": {
         "guzzlehttp/guzzle": "4.0.*-dev"
     }
