@@ -26,11 +26,11 @@ class QueuedRetrySubscriber implements SubscriberInterface, EventTriggerInterfac
     {
         $this->queue = $queue;
         $config += [
-            'filterFn' => null,
+            'filter' => null,
             'max'      => 5,
         ];
 
-        $this->filterFn   = $config['filterFn'];
+        $this->filterFn   = $config['filter'];
         $this->maxRetries = $config['max'];
     }
 

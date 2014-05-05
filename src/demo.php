@@ -30,7 +30,7 @@ $client = new GuzzleHttp\Client();
 
 $retrySubscriber = new \GuzzleHttp\Retry\QueuedRetrySubscriber($hostnameQueue, [
     'max' => 5,
-    'filterFn' => function($retry, \GuzzleHttp\Event\AbstractTransferEvent $event){
+    'filter' => function($retry, \GuzzleHttp\Event\AbstractTransferEvent $event){
             return $event->getResponse() && $event->getResponse()->getStatusCode() == 408;
         }
 ]);
