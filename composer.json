@@ -18,6 +18,7 @@
         }
     },
     "require": {
-        "guzzlehttp/guzzle": "4.0.*-dev"
+        "guzzlehttp/guzzle": "4.0.*-dev",
+        "guzzlehttp/retry-subscriber": "0.1.*"
     }
 }

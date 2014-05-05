@@ -19,51 +19,64 @@ ob_implicit_flush(1);
 //--------------------------------------------------------------------------------
 
 $hostnameQueue = new \GuzzleHttp\Queue\Queue\HostnameQueue();
-$hostnameQueue->setBatchLimit(3);
+$hostnameQueue->setBatchLimit(5);
 
 $queueSubscriber = new \GuzzleHttp\Queue\QueueSubscriber($hostnameQueue);
 
 $client = new GuzzleHttp\Client();
+
+
+/** @var \GuzzleHttp\Message\Request[] $requests */
+
+$retrySubscriber = new \GuzzleHttp\Retry\QueuedRetrySubscriber($hostnameQueue, [
+    'max' => 5,
+    'filterFn' => function($retry, \GuzzleHttp\Event\AbstractTransferEvent $event){
+            return $event->getResponse() && $event->getResponse()->getStatusCode() == 408;
+        }
+]);
+$client->getEmitter()->attach($retrySubscriber);
 $client->getEmitter()->attach($queueSubscriber);
 $client->loadCustomEvents();
 
-/** @var \GuzzleHttp\Message\Request[] $requests */
 $requests = [
-    $client->createRequest('get', 'http://responder.dev/?sleep=3&id=1'),
-    $client->createRequest('get', 'http://responder.dev/?sleep=1&id=2'),
-    $client->createRequest('get', 'http://responder.dev/?sleep=1&id=3'),
-    $client->createRequest('get', 'http://responder.dev/?sleep=1&id=4'),
-    $client->createRequest('get', 'http://responder.dev/?sleep=1&id=5'),
-    $client->createRequest('get', 'http://responder-1.dev/?sleep=3&id=1'),
-    $client->createRequest('get', 'http://responder-1.dev/?sleep=1&id=2'),
-    $client->createRequest('get', 'http://responder-1.dev/?sleep=1&id=3'),
-    $client->createRequest('get', 'http://responder-1.dev/?sleep=1&id=4'),
-    $client->createRequest('get', 'http://responder-2.dev/?sleep=3&id=1'),
-    $client->createRequest('get', 'http://responder-2.dev/?sleep=1&id=2'),
-    $client->createRequest('get', 'http://responder-2.dev/?sleep=1&id=3'),
-    $client->createRequest('get', 'http://responder-2.dev/?sleep=1&id=4'),
-    $client->createRequest('get', 'http://responder-2.dev/?sleep=1&id=5'),
+    $client->createRequest('get', 'http://responder.dev/?sleep=0&id=2&status=408'),
+    $client->createRequest('get', 'http://responder.dev/?sleep=0&id=2&status=200'),
+    $client->createRequest('get', 'http://responder.dev/?sleep=0&id=2&status=300'),
+    $client->createRequest('get', 'http://responder.dev/?sleep=0&id=2&status=400'),
 ];
 
-
 $client->sendAll($requests, [
-        'before'   => function (\GuzzleHttp\Event\BeforeEvent $event) {
-                echo "Started request to {$event->getRequest()->getUrl()} <br/>";
-                ob_flush();
-            },
-        'complete' => function (\GuzzleHttp\Event\CompleteEvent $event) {
-                echo 'Finish request to ' . $event->getRequest()->getUrl() . "<br/>";
-                ob_flush();
-            },
-        'enqueue'  => function (\GuzzleHttp\Queue\Event\EnqueueEvent $enqueueEvent, $eventName) {
-                //                echo 'Thrown into queue event<br/>';
-                ob_flush();
-            },
-        'error'    => function (\GuzzleHttp\Event\ErrorEvent $event) {
-                echo 'Request failed: ' . $event->getRequest()->getUrl() . "<br/>";
-                ob_flush();
-            }
+        'before'   => [
+            'fn'   => function (\GuzzleHttp\Event\BeforeEvent $event) use (&$hostnameQueue) {
+                    echo "Started request {$event->getRequest()->getUrl()} <br/>";
+                    ob_flush();
+                },
+            'once' => false
+        ],
+        'error'    => [
+            'fn'   => function (\GuzzleHttp\Event\ErrorEvent $event) {
+                    echo 'Request failed: ' . $event->getRequest()->getUrl() . '<br/>';
+                    ob_flush();
+                },
+            'once' => false
+        ],
+        'complete' => [
+            'fn'   => function (\GuzzleHttp\Event\CompleteEvent $event) {
+                    echo 'Completed request to ' . $event->getRequest()->getUrl() . '<br/>';
+                    ob_flush();
+                },
+            'once' => false
+        ],
+        'enqueue'  => [
+            'fn'   => function (\GuzzleHttp\Queue\Event\EnqueueEvent $enqueueEvent, $eventName) {
+                    echo "Thrown into queue event {$enqueueEvent->getRequest()->getUrl()}<br/>";
+                    ob_flush();
+                },
+            'once' => false
+        ]
     ]
 );
+
+
 echo 'Done';
 ob_end_flush();

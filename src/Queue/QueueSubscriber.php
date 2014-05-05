@@ -5,9 +5,9 @@ namespace GuzzleHttp\Queue;
 
 use GuzzleHttp\Adapter\Transaction;
 use GuzzleHttp\Event\BeforeEvent;
+use GuzzleHttp\Event\CompleteEvent;
 use GuzzleHttp\Event\EventTriggerInterface;
 use GuzzleHttp\Event\SubscriberInterface;
-use GuzzleHttp\Message\Response;
 use GuzzleHttp\Queue\Event\EnqueueEvent;
 use GuzzleHttp\Queue\Queue\ClientQueueInterface;
 
@@ -16,6 +16,9 @@ class QueueSubscriber implements SubscriberInterface, EventTriggerInterface
 
     /** @var  ClientQueueInterface */
     protected $queue;
+
+    /** @var array */
+    protected $requestListeners = [];
 
     /** @var array Array of custom events that are triggered by this class */
     protected $customEventNames = ['enqueue'];
@@ -44,37 +47,38 @@ class QueueSubscriber implements SubscriberInterface, EventTriggerInterface
     public function getEvents()
     {
         return [
-            'before' => ['beforeListener', 'first']
+            'before'   => ['beforeListener', 'first'],
         ];
     }
 
     public function beforeListener(BeforeEvent $event)
     {
-        // Make a copy of the original request, then detach this interceptor
+        // Remove this listener
+        $event->getRequest()->getEmitter()->removeListener('before', [$this, 'beforeListener']);
 
         // Add reference to the original client
         $this->queue->setClient($event->getClient());
 
+        // Create and emit enqueue event
         $transaction  = new Transaction($event->getClient(), $event->getRequest());
         $enqueueEvent = new EnqueueEvent($transaction);
 
+        // Emit the Enqueue event
         $event->getRequest()->getEmitter()->emit('enqueue', $enqueueEvent);
 
-        // Remove all event listeners from the original request
-        // We don't want to call a completed or error report for a promise
-        foreach ($event->getRequest()->getEmitter()->listeners() as $eventName => $listeners) {
-            foreach ($listeners as $listener) {
-                $event->getRequest()->getEmitter()->removeListener($eventName, $listener);
-                $event->getClient()->getEmitter()->removeListener($eventName, $listener);
-            }
-        }
-        $event->intercept(new Response(200));
+        // Strip all events so they are not emitted on interception
+        $this->requestListeners = $event->getRequest()->getEmitter()->getListeners();
+        $event->getRequest()->getEmitter()->setListeners([]);
 
-        // Now put it in the queue
+        $event->intercept(new ResponsePromise());
+
+        // Reattach events
+        $event->getRequest()->getEmitter()->setListeners($this->requestListeners);
+
+        // Put the request into the queue
         $this->queue->enqueue($event->getRequest());
-        return;
-
     }
+
 
     /**
      * Returns an array of events that can be triggered by this class

@@ -67,7 +67,8 @@ class HostnameQueue implements ClientQueueInterface
             }
 
             // See how much space there is in the running lane
-            $slots                    = $this->batchLimit;
+            $slots = $this->batchLimit;
+
             $this->running[$hostname] = isset($this->running[$hostname]) ? $this->running[$hostname] : [];
 
             if (!empty($this->running[$hostname])) {
@@ -91,7 +92,7 @@ class HostnameQueue implements ClientQueueInterface
     public function requestEndCallback(AbstractRequestEvent $event = null)
     {
         $hostname = $event->getRequest()->getHost();
-        if(isset($this->running[$hostname])){
+        if (isset($this->running[$hostname])) {
             $runnerKey = array_search($event->getRequest(), $this->running[$hostname]);
             if ($runnerKey !== false) {
                 unset($this->running[$hostname]);
