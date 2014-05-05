@@ -6,9 +6,7 @@ namespace GuzzleHttp\Retry;
 use GuzzleHttp\Event\AbstractTransferEvent;
 use GuzzleHttp\Event\EventTriggerInterface;
 use GuzzleHttp\Event\SubscriberInterface;
-use GuzzleHttp\Message\Response;
 use GuzzleHttp\Queue\Queue\ClientQueueInterface;
-use GuzzleHttp\Queue\ResponsePromise;
 
 class QueuedRetrySubscriber implements SubscriberInterface, EventTriggerInterface
 {

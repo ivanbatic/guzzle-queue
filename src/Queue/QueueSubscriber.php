@@ -5,7 +5,6 @@ namespace GuzzleHttp\Queue;
 
 use GuzzleHttp\Adapter\Transaction;
 use GuzzleHttp\Event\BeforeEvent;
-use GuzzleHttp\Event\CompleteEvent;
 use GuzzleHttp\Event\EventTriggerInterface;
 use GuzzleHttp\Event\SubscriberInterface;
 use GuzzleHttp\Queue\Event\EnqueueEvent;
