@@ -34,15 +34,17 @@ $retrySubscriber = new \GuzzleHttp\Retry\QueuedRetrySubscriber($hostnameQueue, [
             return $event->getResponse() && $event->getResponse()->getStatusCode() == 408;
         }
 ]);
+
+$multipointSubscriber = new \GuzzleHttp\MultipointRequest\MultipointRequestSubscriber($hostnameQueue);
+
 $client->getEmitter()->attach($retrySubscriber);
 $client->getEmitter()->attach($queueSubscriber);
+$client->getEmitter()->attach($multipointSubscriber);
+
 $client->loadCustomEvents();
 
 $requests = [
-    $client->createRequest('get', 'http://responder.dev/?sleep=0&id=2&status=408'),
-    $client->createRequest('get', 'http://responder.dev/?sleep=0&id=2&status=200'),
-    $client->createRequest('get', 'http://responder.dev/?sleep=0&id=2&status=300'),
-    $client->createRequest('get', 'http://responder.dev/?sleep=0&id=2&status=400'),
+    $client->createRequest('get', 'http://responder.dev/?sleep=0&id=1&status=200'),
 ];
 
 $client->sendAll($requests, [
@@ -61,7 +63,7 @@ $client->sendAll($requests, [
             'once' => false
         ],
         'complete' => [
-            'fn'   => function (\GuzzleHttp\Event\CompleteEvent $event) {
+            'fn'   => function (\GuzzleHttp\Event\CompleteEvent $event) use ($hostnameQueue) {
                     echo 'Completed request to ' . $event->getRequest()->getUrl() . '<br/>';
                     ob_flush();
                 },
