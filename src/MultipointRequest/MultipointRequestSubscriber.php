@@ -16,8 +16,7 @@ class MultipointRequestSubscriber implements SubscriberInterface
     /** @var  array */
     protected $config = [
         'header'         => 'MWP-Multipoint-ID',
-        'response_param' => 'multipoint_id',
-        'handler'        => null
+        'response_param' => 'multipoint_id'
     ];
 
 
@@ -52,7 +51,6 @@ class MultipointRequestSubscriber implements SubscriberInterface
 
     public function completeListener(AbstractTransferEvent $event)
     {
-        var_dump($event->getRequest()->getHeaders());
         $jsonResponse = $event->getResponse()->json();
         if (is_array($jsonResponse) && isset($jsonResponse[$this->config['response_param']])) {
             $nextRequest = clone $event->getRequest();
