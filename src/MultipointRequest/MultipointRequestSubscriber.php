@@ -20,6 +20,10 @@ class MultipointRequestSubscriber implements SubscriberInterface
     ];
 
 
+    /**
+     * @param ClientQueueInterface $queue
+     * @param array                $config [<br/>'header' => 'MWP-Multipoint-ID',<br/>'response_param' => 'multipoint_id'<br/>]
+     */
     function __construct(ClientQueueInterface $queue, array $config = [])
     {
         $this->queue  = $queue;
